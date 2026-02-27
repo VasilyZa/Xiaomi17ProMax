@@ -17,6 +17,24 @@ ui_print "╚══════════════════════�
 ui_print ""
 
 # ============================================
+# 升级: 强制清理旧版文件
+# ============================================
+
+OLD_MODULE="/data/adb/modules/Xiaomi17ProMax"
+if [ -d "$OLD_MODULE" ]; then
+    ui_print "- 检测到旧版模块，清理旧文件..."
+    rm -rf "$OLD_MODULE/webroot" 2>/dev/null
+    rm -rf "$OLD_MODULE/system" 2>/dev/null
+    rm -f "$OLD_MODULE/is_hyperos3" 2>/dev/null
+    # 保留用户配置: adb_root_enabled
+    if [ -f "$OLD_MODULE/adb_root_enabled" ]; then
+        ADB_ROOT_WAS_ON="true"
+        ui_print "  保留 ADB Root 配置"
+    fi
+    ui_print "  旧版文件已清理"
+fi
+
+# ============================================
 # 目标设备参数
 # ============================================
 
@@ -204,6 +222,15 @@ if [ "$is_hyperos3" = "true" ]; then
     # 记录标记供 post-fs-data.sh 使用
     echo "true" > "$MODPATH/is_hyperos3"
     ui_print "  版本号已写入所有 build.prop"
+fi
+
+# ============================================
+# 恢复用户配置
+# ============================================
+
+if [ "$ADB_ROOT_WAS_ON" = "true" ]; then
+    echo "1" > "$MODPATH/adb_root_enabled"
+    ui_print "- 已恢复 ADB Root 配置"
 fi
 
 # ============================================
