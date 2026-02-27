@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <!--
+    ╔══════════════════════════════════════════════════════════╗
+    ║  Sober UI · Magisk/KernelSU/APatch WebUI 通用模板       ║
+    ║  GitHub: https://github.com/apprat/sober                ║
+    ║                                                          ║
+    ║  使用方法:                                               ║
+    ║  1. 修改 <title> 和页面标题                              ║
+    ║  2. 在 CONFIG 对象中填写你的模块信息                      ║
+    ║  3. 根据需要增删卡片区块                                  ║
+    ║  4. 将此文件放入模块的 webroot/index.html                ║
+    ╚══════════════════════════════════════════════════════════╝
+    -->
+    <title>Module WebUI</title>
+    <script src="https://unpkg.com/sober@latest/dist/sober.min.js"></script>
+    <style>
+        /* ================================================
+           基础样式
+           ================================================ */
+        :root {
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* ================================================
+           滚动区域
+           ================================================ */
+        .scroll-area {
+            padding: 0 16px 32px;
+            padding-bottom: calc(32px + var(--safe-bottom));
+        }
+
+        /* ================================================
+           Hero 横幅
+           - 修改 background 渐变色自定义主题
+           - hero-badge: 版本徽标
+           - hero-chips: 底部状态标签
+           ================================================ */
+        .hero {
+            position: relative;
+            padding: 28px 20px 24px;
+            margin: 12px 0 20px;
+            border-radius: 28px;
+            overflow: hidden;
+            background: linear-gradient(135deg,
+                var(--s-color-primary, #5b6abf) 0%,
+                var(--s-color-tertiary, #7b4f9e) 100%);
+            color: var(--s-color-on-primary, #fff);
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -40%; right: -20%;
+            width: 260px; height: 260px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+        }
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%; left: -10%;
+            width: 200px; height: 200px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.06);
+        }
+        .hero-content { position: relative; z-index: 1; }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.18);
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-bottom: 16px;
+            backdrop-filter: blur(4px);
+        }
+        .hero-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            line-height: 1.3;
+        }
+        .hero-subtitle {
+            margin-top: 6px;
+            font-size: 0.88rem;
+            opacity: 0.85;
+            line-height: 1.5;
+        }
+        .hero-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 18px;
+        }
+        .hero-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 14px;
+            border-radius: 16px;
+            background: rgba(255,255,255,0.15);
+            font-size: 0.78rem;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+        .hero-chip .dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .dot-green  { background: #66ffb2; }
+        .dot-yellow { background: #ffe066; }
+        .dot-red    { background: #ff6b6b; }
+
+        /* ================================================
+           区块标题
+           ================================================ */
+        .section-title {
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--s-color-primary, #5b6abf);
+            padding: 0 4px;
+            margin: 24px 0 12px;
+        }
+
+        /* ================================================
+           信息卡片 (键值对列表)
+           用法: <s-card class="info-card" type="outlined">
+                   <div class="info-card-inner">
+                     <div class="info-row">
+                       <span class="info-label">标签</span>
+                       <span class="info-value">值</span>
+                     </div>
+                   </div>
+                 </s-card>
+           ================================================ */
+        .info-card { border-radius: 20px; overflow: hidden; margin-bottom: 14px; }
+        .info-card-inner { padding: 20px; }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 11px 0;
+        }
+        .info-row:not(:last-child) {
+            border-bottom: 1px solid var(--s-color-outline-variant, rgba(0,0,0,0.08));
+        }
+        .info-label {
+            font-size: 0.84rem;
+            color: var(--s-color-on-surface-variant, #666);
+            flex-shrink: 0;
+            margin-right: 12px;
+        }
+        .info-value {
+            font-size: 0.84rem;
+            font-weight: 500;
+            color: var(--s-color-on-surface, #1a1a1a);
+            text-align: right;
+            word-break: break-all;
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+        }
+
+        /* ================================================
+           可折叠属性组
+           用法: 见 renderPropGroup() 函数
+           ================================================ */
+        .prop-group { margin-bottom: 14px; }
+        .prop-group-card { border-radius: 20px; overflow: hidden; }
+        .prop-group-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .prop-group-title {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--s-color-on-surface, #1a1a1a);
+        }
+        .prop-count {
+            font-size: 0.72rem;
+            font-weight: 500;
+            padding: 2px 10px;
+            border-radius: 12px;
+            background: var(--s-color-primary-container, #e8e0ff);
+            color: var(--s-color-on-primary-container, #4a3880);
+        }
+        .prop-group-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .prop-group-body.expanded { max-height: 2000px; }
+        .prop-group-body-inner { padding: 0 20px 16px; }
+        .prop-item {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            padding: 10px 0;
+        }
+        .prop-item:not(:last-child) {
+            border-bottom: 1px solid var(--s-color-outline-variant, rgba(0,0,0,0.06));
+        }
+        .prop-key {
+            font-size: 0.76rem;
+            color: var(--s-color-primary, #5b6abf);
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+            word-break: break-all;
+        }
+        .prop-val {
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--s-color-on-surface, #1a1a1a);
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+            word-break: break-all;
+        }
+        .prop-arrow {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--s-color-on-surface-variant, #666);
+        }
+        .prop-arrow.rotated { transform: rotate(180deg); }
+
+        /* ================================================
+           操作按钮
+           ================================================ */
+        .action-card {
+            border-radius: 20px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .action-card:active { transform: scale(0.97); }
+        .action-inner {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 18px 24px;
+        }
+        .action-icon {
+            width: 44px; height: 44px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: var(--s-color-primary-container, #e8e0ff);
+            color: var(--s-color-on-primary-container, #4a3880);
+        }
+        .action-text {
+            font-size: 0.84rem;
+            font-weight: 500;
+            color: var(--s-color-on-surface, #1a1a1a);
+        }
+
+        /* ================================================
+           设置项 (带开关/选择器)
+           ================================================ */
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 20px;
+        }
+        .setting-info { display: flex; flex-direction: column; flex: 1; margin-right: 16px; }
+        .setting-title {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--s-color-on-surface, #1a1a1a);
+        }
+        .setting-desc {
+            font-size: 0.78rem;
+            color: var(--s-color-on-surface-variant, #666);
+            margin-top: 2px;
+            line-height: 1.4;
+        }
+
+        /* ================================================
+           页脚
+           ================================================ */
+        .footer {
+            text-align: center;
+            padding: 16px 0 8px;
+            font-size: 0.76rem;
+            color: var(--s-color-on-surface-variant, #999);
+            line-height: 1.6;
+        }
+
+        /* ================================================
+           加载遮罩
+           ================================================ */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            background: var(--s-color-surface, #fff);
+            transition: opacity 0.4s ease;
+        }
+        .loading-overlay.hide { opacity: 0; pointer-events: none; }
+        .loading-text {
+            font-size: 0.88rem;
+            color: var(--s-color-on-surface-variant, #999);
+        }
+
+        /* ================================================
+           入场动画
+           为元素添加 class="anim-item" style="animation-delay:.1s"
+           ================================================ */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(18px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .anim-item {
+            opacity: 0;
+            animation: fadeUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+    </style>
+</head>
+<body>
+<s-page theme="auto">
+
+    <!-- ============ 加载遮罩 ============ -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <s-circular-progress></s-circular-progress>
+        <div class="loading-text">正在加载...</div>
+    </div>
+
+    <!-- ============ 顶栏 ============ -->
+    <s-appbar>
+        <s-icon-button slot="navigation" id="btnBack">
+            <s-icon type="arrow_back"></s-icon>
+        </s-icon-button>
+        <!-- 修改: 你的模块名 -->
+        <div slot="headline">Module Name</div>
+    </s-appbar>
+
+    <div class="scroll-area">
+
+        <!-- ============ Hero 横幅 ============ -->
+        <div class="hero anim-item" style="animation-delay:.05s">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+                    <!-- 修改: 模块名和版本 -->
+                    Module v1.0.0
+                </div>
+                <!-- 修改: 标题和描述 -->
+                <div class="hero-title">Your Module Name</div>
+                <div class="hero-subtitle">模块的简要描述文字</div>
+                <div class="hero-chips">
+                    <div class="hero-chip">
+                        <span class="dot dot-green" id="dotStatus"></span>
+                        <span id="txtStatus">检测中...</span>
+                    </div>
+                    <div class="hero-chip">
+                        <span id="txtRoot">Root: --</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ 操作按钮 (示例: 刷新) ============ -->
+        <div class="anim-item" style="animation-delay:.12s">
+            <s-card class="action-card" type="filled" clickable="true" id="btnRefresh">
+                <div class="action-inner">
+                    <div class="action-icon">
+                        <svg viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg>
+                    </div>
+                    <span class="action-text">刷新状态</span>
+                </div>
+            </s-card>
+        </div>
+
+        <!-- ============ 信息卡片 (键值对) ============ -->
+        <div class="section-title anim-item" style="animation-delay:.18s">基本信息</div>
+        <s-card class="info-card anim-item" type="outlined" style="animation-delay:.22s">
+            <div class="info-card-inner">
+                <div class="info-row">
+                    <span class="info-label">属性名</span>
+                    <span class="info-value" id="val1">--</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">属性名</span>
+                    <span class="info-value" id="val2">--</span>
+                </div>
+            </div>
+        </s-card>
+
+        <!-- ============ 设置卡片 (带开关) ============ -->
+        <div class="section-title anim-item" style="animation-delay:.28s">模块设置</div>
+        <s-card class="info-card anim-item" type="outlined" style="animation-delay:.32s">
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-title">功能开关</span>
+                    <span class="setting-desc">启用或禁用某项功能</span>
+                </div>
+                <s-switch id="switch1"></s-switch>
+            </div>
+            <s-divider></s-divider>
+            <div class="setting-item">
+                <div class="setting-info">
+                    <span class="setting-title">另一个选项</span>
+                    <span class="setting-desc">这是选项的说明文字</span>
+                </div>
+                <s-switch id="switch2"></s-switch>
+            </div>
+        </s-card>
+
+        <!-- ============ 可折叠属性组 ============ -->
+        <div class="section-title anim-item" style="animation-delay:.38s">详细属性</div>
+        <div id="propGroups" class="anim-item" style="animation-delay:.42s"></div>
+
+        <!-- ============ 页脚 ============ -->
+        <div class="footer anim-item" style="animation-delay:.48s">
+            Your Module v1.0.0<br>
+            Powered by Sober UI
+        </div>
+
+    </div>
+</s-page>
+
+<s-snackbar id="snackbar"></s-snackbar>
+
+<script>
+// ================================================================
+//  模块配置 (修改此处适配你的模块)
+// ================================================================
+const CONFIG = {
+    // 模块 ID (与 module.prop 中 id= 一致)
+    MODULE_ID: 'your_module_id',
+    // 模块配置文件路径 (可选，用于读写设置)
+    CONFIG_FILE: '/data/adb/modules/your_module_id/config.conf',
+};
+
+const MODULE_DIR = `/data/adb/modules/${CONFIG.MODULE_ID}`;
+
+// ================================================================
+//  属性分组定义 (按需修改)
+//  title: 分组标题
+//  props: 要显示的系统属性列表
+// ================================================================
+const PROP_GROUPS = [
+    {
+        title: '示例分组',
+        props: [
+            'ro.product.model',
+            'ro.product.device',
+            'ro.product.brand',
+        ]
+    },
+    // 添加更多分组...
+];
+
+
+// ================================================================
+//  KernelSU / APatch / Magisk JavaScript Bridge
+//  !! 以下代码无需修改 !!
+// ================================================================
+
+let _cbId = 0;
+
+/**
+ * 执行 shell 命令 (以 root 权限)
+ * @param {string} cmd - 要执行的命令
+ * @param {object} opts - 可选参数 { cwd, env }
+ * @returns {Promise<{errno: number, stdout: string, stderr: string}>}
+ */
+function exec(cmd, opts = {}) {
+    return new Promise(resolve => {
+        const cb = `__cb_${Date.now()}_${_cbId++}`;
+        window[cb] = (errno, stdout, stderr) => {
+            resolve({ errno, stdout: stdout || '', stderr: stderr || '' });
+            delete window[cb];
+        };
+        try {
+            if (typeof ksu !== 'undefined') {
+                ksu.exec(cmd, JSON.stringify(opts), cb);
+            } else {
+                resolve({ errno: 1, stdout: '', stderr: 'ksu not available (browser debug mode)' });
+            }
+        } catch (e) {
+            resolve({ errno: 1, stdout: '', stderr: e.message });
+        }
+    });
+}
+
+/**
+ * 显示 Toast / Snackbar 消息
+ * @param {string} msg - 消息内容
+ */
+function showToast(msg) {
+    if (typeof ksu !== 'undefined') { ksu.toast(msg); return; }
+    const sb = document.getElementById('snackbar');
+    sb.textContent = msg;
+    sb.show();
+}
+
+
+// ================================================================
+//  系统属性工具
+// ================================================================
+
+/**
+ * 读取单个系统属性
+ * @param {string} key - 属性名
+ * @returns {Promise<string>}
+ */
+async function getProp(key) {
+    const { errno, stdout } = await exec(`getprop ${key}`);
+    return errno === 0 ? stdout.trim() : '';
+}
+
+/**
+ * 批量读取系统属性 (单次 exec 调用，高效)
+ * @param {string[]} keys - 属性名数组
+ * @returns {Promise<Object>} { key: value, ... }
+ */
+async function getProps(keys) {
+    const script = keys.map(k => `echo "@@${k}@@=$(getprop ${k})"`).join(';');
+    const { stdout } = await exec(`sh -c '${script}'`);
+    const result = {};
+    keys.forEach(k => {
+        const m = stdout.match(new RegExp(`@@${k.replace(/\./g, '\\.')}@@=(.*)`));
+        result[k] = m ? m[1].trim() : '';
+    });
+    return result;
+}
+
+
+// ================================================================
+//  模块状态与 Root 检测
+// ================================================================
+
+/** 检测模块是否处于启用状态 */
+async function checkModuleActive() {
+    const { errno } = await exec(`[ -d "${MODULE_DIR}" ] && [ ! -f "${MODULE_DIR}/disable" ]`);
+    return errno === 0;
+}
+
+/** 检测当前 Root 方案 */
+async function detectRoot() {
+    let r = await exec('which ksud');
+    if (r.errno === 0 && r.stdout.trim()) {
+        const ver = await exec('ksud --version');
+        return 'KernelSU ' + (ver.stdout.trim().split('\n')[0] || '');
+    }
+    r = await exec('which apd');
+    if (r.errno === 0 && r.stdout.trim()) return 'APatch';
+    r = await exec('magisk -c');
+    if (r.errno === 0 && r.stdout.trim()) return 'Magisk ' + r.stdout.trim();
+    return 'Unknown';
+}
+
+
+// ================================================================
+//  可折叠属性组渲染器
+// ================================================================
+
+/**
+ * 渲染属性分组到容器
+ * @param {Object} allVals - { propKey: propValue, ... }
+ * @param {string} containerId - 目标容器元素 ID
+ */
+function renderPropGroups(allVals, containerId = 'propGroups') {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+
+    PROP_GROUPS.forEach((group, gi) => {
+        const validProps = group.props.filter(p => allVals[p] !== undefined);
+        const card = document.createElement('div');
+        card.className = 'prop-group';
+        card.innerHTML = `
+            <s-card class="prop-group-card" type="outlined">
+                <div class="prop-group-header" data-group="${gi}">
+                    <span class="prop-group-title">${group.title}</span>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span class="prop-count">${validProps.length} 项</span>
+                        <s-icon class="prop-arrow" type="expand_more" style="font-size:20px"></s-icon>
+                    </div>
+                </div>
+                <div class="prop-group-body" id="pgBody${gi}">
+                    <div class="prop-group-body-inner">
+                        ${validProps.map(p => `
+                            <div class="prop-item">
+                                <span class="prop-key">${p}</span>
+                                <span class="prop-val">${allVals[p] || '(empty)'}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </s-card>
+        `;
+        container.appendChild(card);
+
+        card.querySelector('.prop-group-header').addEventListener('click', () => {
+            const body = document.getElementById(`pgBody${gi}`);
+            const arrow = card.querySelector('.prop-arrow');
+            body.classList.toggle('expanded');
+            arrow.classList.toggle('rotated');
+        });
+    });
+}
+
+
+// ================================================================
+//  配置文件读写 (键=值 格式)
+// ================================================================
+
+/**
+ * 读取配置文件
+ * @returns {Promise<Object>} { key: value, ... }
+ */
+async function loadConfig() {
+    const { errno, stdout } = await exec(`cat "${CONFIG.CONFIG_FILE}"`);
+    if (errno !== 0) return {};
+    const cfg = {};
+    stdout.split('\n').forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) return;
+        const idx = trimmed.indexOf('=');
+        if (idx > 0) {
+            cfg[trimmed.substring(0, idx)] = trimmed.substring(idx + 1);
+        }
+    });
+    return cfg;
+}
+
+/**
+ * 保存配置文件
+ * @param {Object} cfg - { key: value, ... }
+ */
+async function saveConfig(cfg) {
+    const lines = Object.entries(cfg).map(([k, v]) => `${k}=${v}`).join('\n');
+    const { errno } = await exec(`echo '${lines}' > "${CONFIG.CONFIG_FILE}"`);
+    if (errno === 0) {
+        showToast('设置已保存');
+    } else {
+        showToast('保存失败');
+    }
+}
+
+
+// ================================================================
+//  主逻辑 (按需修改)
+// ================================================================
+
+async function loadAll() {
+    // 并行获取数据
+    const allPropKeys = PROP_GROUPS.flatMap(g => g.props);
+    const [vals, root, active] = await Promise.all([
+        getProps(allPropKeys),
+        detectRoot(),
+        checkModuleActive(),
+    ]);
+
+    // 更新 Hero 状态
+    const dot = document.getElementById('dotStatus');
+    const txt = document.getElementById('txtStatus');
+    if (active) {
+        dot.className = 'dot dot-green';
+        txt.textContent = '模块已激活';
+    } else {
+        dot.className = 'dot dot-red';
+        txt.textContent = '模块未激活';
+    }
+    document.getElementById('txtRoot').textContent = root || 'Root: Unknown';
+
+    // 更新信息卡片 (示例，按需修改)
+    document.getElementById('val1').textContent = vals['ro.product.model'] || '--';
+    document.getElementById('val2').textContent = vals['ro.product.device'] || '--';
+
+    // 渲染属性分组
+    renderPropGroups(vals);
+
+    // 隐藏加载遮罩
+    document.getElementById('loadingOverlay').classList.add('hide');
+}
+
+
+// ================================================================
+//  事件绑定
+// ================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadAll();
+
+    // 返回按钮
+    document.getElementById('btnBack').addEventListener('click', () => {
+        history.back();
+    });
+
+    // 刷新按钮
+    document.getElementById('btnRefresh').addEventListener('click', async () => {
+        document.getElementById('loadingOverlay').classList.remove('hide');
+        await loadAll();
+        showToast('已刷新');
+    });
+
+    // 开关示例: 读取和保存配置
+    // document.getElementById('switch1').addEventListener('change', async (e) => {
+    //     const cfg = await loadConfig();
+    //     cfg.feature_enabled = e.target.checked ? 'true' : 'false';
+    //     await saveConfig(cfg);
+    // });
+});
+</script>
+</body>
+</html>
