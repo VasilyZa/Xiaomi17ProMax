@@ -5,7 +5,6 @@ on:
     branches: [ main ]
     paths:
       - 'module.prop'
-      - 'system.prop'
       - 'post-fs-data.sh'
       - 'service.sh'
       - 'customize.sh'
@@ -59,7 +58,7 @@ jobs:
           echo "Last release tag: $LAST_TAG"
 
           MODULE_PATHS=(
-            module.prop system.prop post-fs-data.sh service.sh
+            module.prop post-fs-data.sh service.sh
             customize.sh uninstall.sh webroot/ META-INF/
           )
 
@@ -306,7 +305,7 @@ jobs:
 
           if [ -n "$LAST_TAG" ]; then
             LOG=$(git log "${LAST_TAG}..HEAD" --pretty=format:"- %s (\`%h\`)" --no-merges -- \
-              module.prop system.prop post-fs-data.sh service.sh \
+              module.prop post-fs-data.sh service.sh \
               customize.sh uninstall.sh 'webroot/*' 'META-INF/*')
           else
             LOG=$(git log --pretty=format:"- %s (\`%h\`)" --no-merges)
@@ -330,7 +329,6 @@ jobs:
             META-INF/com/google/android/update-binary
             META-INF/com/google/android/updater-script
             module.prop
-            system.prop
             post-fs-data.sh
             service.sh
             customize.sh
