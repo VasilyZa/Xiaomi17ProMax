@@ -13,6 +13,15 @@ on:
       - 'webroot/**'
       - 'META-INF/**'
   workflow_dispatch:
+    inputs:
+      release:
+        description: '是否上传 Release'
+        required: true
+        type: choice
+        options:
+          - 'yes'
+          - 'no'
+        default: 'yes'
 
 jobs:
   # ==========================================
@@ -32,7 +41,13 @@ jobs:
       - name: Detect module changes
         id: diff
         run: |
-          # 获取上一个 Release tag
+          # 手动触发时始终构建
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual trigger, will build."
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           LAST_TAG=$(git tag -l 'v*' --sort=-v:refname | head -n1)
 
           if [ -z "$LAST_TAG" ]; then
@@ -43,7 +58,6 @@ jobs:
 
           echo "Last release tag: $LAST_TAG"
 
-          # 比较模块源文件是否有变更
           MODULE_PATHS=(
             module.prop system.prop post-fs-data.sh service.sh
             customize.sh uninstall.sh webroot/ META-INF/
@@ -81,12 +95,8 @@ jobs:
         run: |
           echo "=== ShellCheck ==="
           SCRIPTS=(post-fs-data.sh service.sh customize.sh uninstall.sh)
-          FAILED=false
           for script in "${SCRIPTS[@]}"; do
             echo "--- Checking: $script ---"
-            # SC2034: unused variable (常见于模块模板)
-            # SC2086: word splitting (resetprop 需要)
-            # SC2169: dash 兼容性 (Android sh 基于 mksh)
             if shellcheck -e SC2034,SC2086,SC2169,SC3043,SC3010 -s sh "$script"; then
               echo "PASS: $script"
             else
@@ -107,7 +117,6 @@ jobs:
             echo "OK: ${field}=${VALUE}"
           done
 
-          # 检查 id 格式
           MODULE_ID=$(grep '^id=' module.prop | cut -d'=' -f2)
           if ! echo "$MODULE_ID" | grep -qE '^[a-zA-Z][a-zA-Z0-9._-]+$'; then
             echo "FAIL: invalid module id format '${MODULE_ID}'"
@@ -115,7 +124,6 @@ jobs:
           fi
           echo "OK: id format valid"
 
-          # 检查 versionCode 是整数
           VERSION_CODE=$(grep '^versionCode=' module.prop | cut -d'=' -f2)
           if ! echo "$VERSION_CODE" | grep -qE '^[0-9]+$'; then
             echo "FAIL: versionCode must be integer, got '${VERSION_CODE}'"
@@ -123,7 +131,7 @@ jobs:
           fi
           echo "OK: versionCode is integer"
 
-      - name: Validate ZIP structure
+      - name: Validate module structure
         run: |
           echo "=== Validate module files ==="
           REQUIRED=(
@@ -139,7 +147,6 @@ jobs:
             echo "OK: $f"
           done
 
-          # updater-script 必须包含 #MAGISK
           if ! head -1 META-INF/com/google/android/updater-script | grep -q '#MAGISK'; then
             echo "FAIL: updater-script must start with #MAGISK"
             exit 1
@@ -162,29 +169,136 @@ jobs:
         with:
           fetch-depth: 0
 
+      # ---- 自动递增 patch 版本号 ----
+      - name: Calculate version
+        id: version
+        run: |
+          # 从 module.prop 读取基础版本 (如 v1.1.0)
+          BASE_VER=$(grep '^version=' module.prop | cut -d'=' -f2)
+          # 提取 major.minor (如 1.1)
+          MAJOR_MINOR=$(echo "$BASE_VER" | sed 's/^v//' | grep -oE '^[0-9]+\.[0-9]+')
+
+          echo "Base version: $BASE_VER"
+          echo "Major.Minor: $MAJOR_MINOR"
+
+          # 查找该 major.minor 下已有的最大 patch 号
+          MAX_PATCH=-1
+          for tag in $(git tag -l "v${MAJOR_MINOR}.*" 2>/dev/null); do
+            PATCH=$(echo "$tag" | sed "s/^v${MAJOR_MINOR}\.//" | grep -oE '^[0-9]+')
+            if [ -n "$PATCH" ] && [ "$PATCH" -gt "$MAX_PATCH" ]; then
+              MAX_PATCH=$PATCH
+            fi
+          done
+
+          # 新 patch = max + 1，首次则为 0
+          if [ "$MAX_PATCH" -lt 0 ]; then
+            NEW_PATCH=0
+          else
+            NEW_PATCH=$((MAX_PATCH + 1))
+          fi
+
+          NEW_VER="v${MAJOR_MINOR}.${NEW_PATCH}"
+          # versionCode 直接用 patch 累计值
+          BASE_CODE=$(grep '^versionCode=' module.prop | cut -d'=' -f2)
+          NEW_CODE=$((BASE_CODE + NEW_PATCH))
+
+          echo "new_ver=${NEW_VER}" >> "$GITHUB_OUTPUT"
+          echo "new_code=${NEW_CODE}" >> "$GITHUB_OUTPUT"
+          echo "major_minor=${MAJOR_MINOR}" >> "$GITHUB_OUTPUT"
+
+          echo "New version: $NEW_VER (code: $NEW_CODE)"
+
+      # ---- 判断是否发布 Release ----
+      - name: Determine release mode
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            if [ "${{ inputs.release }}" = "yes" ]; then
+              echo "is_release=true" >> "$GITHUB_OUTPUT"
+              echo "is_ci=false" >> "$GITHUB_OUTPUT"
+              echo "Mode: Release"
+            else
+              echo "is_release=false" >> "$GITHUB_OUTPUT"
+              echo "is_ci=true" >> "$GITHUB_OUTPUT"
+              echo "Mode: CI Build (no release)"
+            fi
+          else
+            # push 事件默认发布
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
+            echo "is_ci=false" >> "$GITHUB_OUTPUT"
+            echo "Mode: Release (push trigger)"
+          fi
+
+      # ---- 获取模块信息 ----
       - name: Get module info
         id: info
         run: |
           MODULE_ID=$(grep '^id=' module.prop | cut -d'=' -f2)
-          MODULE_VER=$(grep '^version=' module.prop | cut -d'=' -f2)
           MODULE_NAME=$(grep '^name=' module.prop | cut -d'=' -f2-)
           MODULE_DESC=$(grep '^description=' module.prop | cut -d'=' -f2-)
           SHORT_SHA=$(git rev-parse --short HEAD)
           FULL_SHA=$(git rev-parse HEAD)
-          FILENAME="${MODULE_ID}-${MODULE_VER}-${SHORT_SHA}"
-          TAG_NAME="${MODULE_VER}"
+          NEW_VER="${{ steps.version.outputs.new_ver }}"
+          FILENAME="${MODULE_ID}-${NEW_VER}-${SHORT_SHA}"
           BUILD_DATE=$(date -u '+%Y-%m-%d %H:%M UTC')
 
           echo "module_id=${MODULE_ID}" >> "$GITHUB_OUTPUT"
-          echo "module_ver=${MODULE_VER}" >> "$GITHUB_OUTPUT"
           echo "module_name=${MODULE_NAME}" >> "$GITHUB_OUTPUT"
           echo "module_desc=${MODULE_DESC}" >> "$GITHUB_OUTPUT"
           echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
           echo "full_sha=${FULL_SHA}" >> "$GITHUB_OUTPUT"
           echo "filename=${FILENAME}" >> "$GITHUB_OUTPUT"
-          echo "tag_name=${TAG_NAME}" >> "$GITHUB_OUTPUT"
           echo "build_date=${BUILD_DATE}" >> "$GITHUB_OUTPUT"
 
+          echo "Output filename: ${FILENAME}.zip"
+
+      # ---- 写入版本号到 module.prop (CI 构建加标识) ----
+      - name: Patch module.prop
+        run: |
+          NEW_VER="${{ steps.version.outputs.new_ver }}"
+          NEW_CODE="${{ steps.version.outputs.new_code }}"
+          IS_CI="${{ steps.mode.outputs.is_ci }}"
+
+          if [ "$IS_CI" = "true" ]; then
+            # CI 构建: 版本号加 -ci 后缀，描述加 [CI Build] 标识
+            sed -i "s/^version=.*/version=${NEW_VER}-ci/" module.prop
+            sed -i "s/^versionCode=.*/versionCode=${NEW_CODE}/" module.prop
+            sed -i "s/^description=.*/&\n# [CI Build] 此版本由 CI 自动构建，非正式发布版本/" module.prop
+            echo "Patched module.prop with CI identifier"
+          else
+            # Release 构建: 仅更新版本号
+            sed -i "s/^version=.*/version=${NEW_VER}/" module.prop
+            sed -i "s/^versionCode=.*/versionCode=${NEW_CODE}/" module.prop
+            echo "Patched module.prop for release"
+          fi
+
+          echo "--- module.prop ---"
+          cat module.prop
+
+      # ---- 同步版本号到 WebUI 和 customize.sh ----
+      - name: Patch version in all files
+        run: |
+          NEW_VER="${{ steps.version.outputs.new_ver }}"
+          IS_CI="${{ steps.mode.outputs.is_ci }}"
+
+          if [ "$IS_CI" = "true" ]; then
+            DISPLAY_VER="${NEW_VER}-ci"
+          else
+            DISPLAY_VER="${NEW_VER}"
+          fi
+
+          # customize.sh 安装界面版本号
+          sed -i "s/║  版本: v[0-9.]*/║  版本: ${DISPLAY_VER}/" customize.sh
+
+          # WebUI Hero badge
+          sed -i "s/Device Spoofer v[0-9.]*/Device Spoofer ${DISPLAY_VER}/" webroot/index.html
+
+          # WebUI footer
+          sed -i "s/Device Spoofer v[0-9.]*/Device Spoofer ${DISPLAY_VER}/" webroot/index.html
+
+          echo "All files patched to ${DISPLAY_VER}"
+
+      # ---- 生成 changelog ----
       - name: Generate changelog
         id: changelog
         run: |
@@ -202,14 +316,15 @@ jobs:
             LOG="- Initial release"
           fi
 
-          # 写入多行输出
           {
             echo "log<<CHANGELOG_EOF"
             echo "$LOG"
             echo "CHANGELOG_EOF"
           } >> "$GITHUB_OUTPUT"
 
+      # ---- 打包 ----
       - name: Build flashable ZIP
+        id: build
         run: |
           MODULE_FILES=(
             META-INF/com/google/android/update-binary
@@ -226,7 +341,6 @@ jobs:
           OUTNAME="${{ steps.info.outputs.filename }}.zip"
           zip -9 "$OUTNAME" "${MODULE_FILES[@]}"
 
-          # 计算校验
           SHA256=$(sha256sum "$OUTNAME" | cut -d' ' -f1)
           SIZE=$(stat -c%s "$OUTNAME")
           SIZE_KB=$(echo "scale=1; $SIZE / 1024" | bc)
@@ -237,8 +351,8 @@ jobs:
           echo "Built: $OUTNAME (${SIZE_KB} KB)"
           echo "SHA256: $SHA256"
           unzip -t "$OUTNAME"
-        id: build
 
+      # ---- 上传 Artifact (始终上传) ----
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -246,11 +360,13 @@ jobs:
           path: ${{ steps.info.outputs.filename }}.zip
           compression-level: 0
 
+      # ---- 创建 Release (仅 release 模式) ----
       - name: Create Release
+        if: steps.mode.outputs.is_release == 'true'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.info.outputs.tag_name }}
-          name: "🚀 ${{ steps.info.outputs.module_name }} ${{ steps.info.outputs.module_ver }}"
+          tag_name: ${{ steps.version.outputs.new_ver }}
+          name: "🚀 ${{ steps.info.outputs.module_name }} ${{ steps.version.outputs.new_ver }}"
           body: |
             ## 📱 ${{ steps.info.outputs.module_name }}
 
@@ -291,6 +407,7 @@ jobs:
             | 项目 | 值 |
             |:---|:---|
             | 文件名 | `${{ steps.info.outputs.filename }}.zip` |
+            | 版本 | `${{ steps.version.outputs.new_ver }}` |
             | 大小 | ${{ steps.build.outputs.size }} |
             | SHA-256 | `${{ steps.build.outputs.sha256 }}` |
             | Commit | [`${{ steps.info.outputs.short_sha }}`](https://github.com/${{ github.repository }}/commit/${{ steps.info.outputs.full_sha }}) |
