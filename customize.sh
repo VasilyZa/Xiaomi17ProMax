@@ -28,19 +28,12 @@ if [ -d "$OLD_MODULE" ]; then
     rm -rf "$OLD_MODULE/webroot" 2>/dev/null
     rm -rf "$OLD_MODULE/system" 2>/dev/null
     rm -f "$OLD_MODULE/is_hyperos3" 2>/dev/null
-    if [ -f "$OLD_MODULE/adb_root_enabled" ]; then
-        ADB_ROOT_WAS_ON="true"
-        ui_print "  保留 ADB Root 配置"
-    fi
     ui_print "  旧版文件已清理"
 fi
 
 # 清理旧名称模块残留
 if [ -d "$OLD_MODULE_LEGACY" ]; then
     ui_print "- 检测到旧版 Xiaomi17ProMax 模块，清理..."
-    if [ -f "$OLD_MODULE_LEGACY/adb_root_enabled" ]; then
-        ADB_ROOT_WAS_ON="true"
-    fi
     rm -rf "$OLD_MODULE_LEGACY" 2>/dev/null
     ui_print "  旧版模块已清理"
 fi
@@ -233,15 +226,6 @@ if [ "$is_hyperos3" = "true" ]; then
     # 记录标记供 post-fs-data.sh 使用
     echo "true" > "$MODPATH/is_hyperos3"
     ui_print "  版本号已写入所有 build.prop"
-fi
-
-# ============================================
-# 恢复用户配置
-# ============================================
-
-if [ "$ADB_ROOT_WAS_ON" = "true" ]; then
-    echo "1" > "$MODPATH/adb_root_enabled"
-    ui_print "- 已恢复 ADB Root 配置"
 fi
 
 # ============================================

@@ -240,118 +240,6 @@
             color: var(--s-color-on-surface, #1a1a1a);
         }
 
-        /* ---- 功能开关卡片 ---- */
-        .toggle-card {
-            border-radius: 20px;
-            overflow: hidden;
-            margin-bottom: 14px;
-        }
-        .toggle-card-inner {
-            padding: 20px;
-        }
-        .toggle-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-        }
-        .toggle-info { flex: 1; }
-        .toggle-title {
-            font-size: 0.92rem;
-            font-weight: 600;
-            color: var(--s-color-on-surface, #1a1a1a);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .toggle-desc {
-            font-size: 0.78rem;
-            color: var(--s-color-on-surface-variant, #666);
-            margin-top: 4px;
-            line-height: 1.5;
-        }
-        .toggle-status {
-            font-size: 0.76rem;
-            font-weight: 500;
-            padding: 3px 10px;
-            border-radius: 12px;
-            margin-top: 8px;
-            display: inline-block;
-        }
-        .toggle-status.on {
-            background: var(--s-color-primary-container, #e8e0ff);
-            color: var(--s-color-on-primary-container, #4a3880);
-        }
-        .toggle-status.off {
-            background: var(--s-color-surface-variant, #e7e0ec);
-            color: var(--s-color-on-surface-variant, #666);
-        }
-        .toggle-warn {
-            font-size: 0.74rem;
-            color: var(--s-color-error, #ba1a1a);
-            margin-top: 10px;
-            padding: 8px 12px;
-            border-radius: 12px;
-            background: var(--s-color-error-container, #ffdad6);
-            line-height: 1.5;
-            display: none;
-        }
-        .toggle-warn.show { display: block; }
-
-        /* ---- 原生滑块开关 ---- */
-        .md-switch {
-            position: relative;
-            width: 52px;
-            height: 32px;
-            flex-shrink: 0;
-            cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .md-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-            position: absolute;
-        }
-        .md-switch .track {
-            position: absolute;
-            inset: 0;
-            border-radius: 16px;
-            background: var(--s-color-surface-variant, #e0dce4);
-            border: 2px solid var(--s-color-outline, #79747e);
-            transition: background 0.2s, border-color 0.2s;
-        }
-        .md-switch .thumb {
-            position: absolute;
-            top: 50%;
-            left: 8px;
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: var(--s-color-outline, #79747e);
-            transform: translateY(-50%);
-            transition: left 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-                        width 0.2s, height 0.2s,
-                        background 0.2s;
-        }
-        .md-switch input:checked ~ .track {
-            background: #e65100;
-            border-color: #e65100;
-        }
-        .md-switch input:checked ~ .thumb {
-            left: 24px;
-            width: 24px;
-            height: 24px;
-            background: #fff;
-        }
-        .md-switch:active .thumb {
-            width: 20px;
-            height: 20px;
-        }
-        .md-switch:active input:checked ~ .thumb {
-            left: 22px;
-        }
-
         /* ---- 底部信息 ---- */
         .footer {
             text-align: center;
@@ -503,33 +391,9 @@
             </div>
         </s-card>
 
-        <!-- 功能开关 -->
-        <div class="section-title anim-item" style="animation-delay:.35s">功能开关</div>
-        <s-card class="toggle-card anim-item" type="outlined" style="animation-delay:.38s">
-            <div class="toggle-card-inner">
-                <div class="toggle-row">
-                    <div class="toggle-info">
-                        <div class="toggle-title">
-                            <svg viewBox="0 -960 960 960" width="20" height="20" fill="currentColor"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720v480q0 33-23.5 56.5T800-160H160Zm0-80h640v-480H160v480Zm140-40h320v-60H300v60ZM360-450l-56-56 63-64-63-64 56-56 120 120-120 120Zm-200 210v-480 480Z"/></svg>
-                            ADB Root 调试
-                        </div>
-                        <div class="toggle-desc">在非 userdebug 构建上启用 adb root 权限，允许通过 ADB 获取 root shell</div>
-                        <div class="toggle-status off" id="adbRootStatus">已关闭</div>
-                    </div>
-                    <label class="md-switch" id="adbRootSwitch">
-                        <input type="checkbox" id="adbRootCheckbox">
-                        <div class="track"></div>
-                        <div class="thumb"></div>
-                    </label>
-                </div>
-                <div class="toggle-warn" id="adbRootWarn">注意：开启后 ADB 连接将短暂断开并重新建立，此为正常现象。重启后设置仍然生效。</div>
-                <div id="adbDiag" style="margin-top:10px;font-family:'Cascadia Code','Fira Code',monospace;font-size:0.72rem;color:var(--s-color-on-surface-variant,#666);line-height:1.8;display:none;"></div>
-            </div>
-        </s-card>
-
         <!-- 修改属性列表 -->
-        <div class="section-title anim-item" style="animation-delay:.42s">已修改属性</div>
-        <div id="propGroups" class="anim-item" style="animation-delay:.46s"></div>
+        <div class="section-title anim-item" style="animation-delay:.38s">已修改属性</div>
+        <div id="propGroups" class="anim-item" style="animation-delay:.42s"></div>
 
         <!-- 底部 -->
         <div class="footer anim-item" style="animation-delay:.52s">
@@ -748,104 +612,6 @@ async function checkModuleStatus() {
 }
 
 // ============================================================
-//  ADB Root 调试开关
-// ============================================================
-async function checkAdbRoot() {
-    const { errno } = await exec(`[ -f "${MODULE_DIR}/adb_root_enabled" ]`);
-    return errno === 0;
-}
-
-function updateAdbRootUI(enabled) {
-    const cb = document.getElementById('adbRootCheckbox');
-    const status = document.getElementById('adbRootStatus');
-    const warn = document.getElementById('adbRootWarn');
-    const diag = document.getElementById('adbDiag');
-    cb.checked = enabled;
-    if (enabled) {
-        status.textContent = '已开启';
-        status.className = 'toggle-status on';
-        warn.classList.add('show');
-        diag.style.display = 'block';
-        refreshAdbDiag();
-    } else {
-        status.textContent = '已关闭';
-        status.className = 'toggle-status off';
-        warn.classList.remove('show');
-        diag.style.display = 'none';
-    }
-}
-
-async function refreshAdbDiag() {
-    const keys = ['ro.debuggable','ro.secure','ro.adb.secure','ro.build.type','service.adb.root'];
-    const vals = await getProps(keys);
-    const diag = document.getElementById('adbDiag');
-    diag.innerHTML = keys.map(k => {
-        const v = vals[k] || '(empty)';
-        const ok = (k === 'ro.debuggable' && v === '1') ||
-                   (k === 'ro.secure' && v === '0') ||
-                   (k === 'ro.adb.secure' && v === '0') ||
-                   (k === 'ro.build.type' && v === 'userdebug') ||
-                   (k === 'service.adb.root' && v === '1');
-        const color = ok ? '#2e7d32' : 'var(--s-color-error, #ba1a1a)';
-        return `<span style="color:${color}">${k} = ${v} ${ok ? '✓' : '✗'}</span>`;
-    }).join('<br>');
-}
-
-// resetprop 路径检测脚本 (与 post-fs-data.sh 一致)
-const FIND_RESETPROP = `
-RP=""
-command -v resetprop >/dev/null 2>&1 && RP="resetprop"
-[ -z "$RP" ] && command -v magisk >/dev/null 2>&1 && RP="magisk resetprop"
-[ -z "$RP" ] && [ -f /data/adb/magisk/magisk64 ] && RP="/data/adb/magisk/magisk64 resetprop"
-[ -z "$RP" ] && [ -f /data/adb/magisk/magisk32 ] && RP="/data/adb/magisk/magisk32 resetprop"
-[ -z "$RP" ] && [ -f /data/adb/ksu/bin/resetprop ] && RP="/data/adb/ksu/bin/resetprop"
-[ -z "$RP" ] && [ -f /data/adb/ap/bin/resetprop ] && RP="/data/adb/ap/bin/resetprop"
-[ -z "$RP" ] && exit 1
-`.trim();
-
-async function toggleAdbRoot(enable) {
-    if (enable) {
-        const { errno, stderr } = await exec(`
-            ${FIND_RESETPROP}
-            echo 1 > "${MODULE_DIR}/adb_root_enabled"
-            $RP --delete ro.debuggable; $RP ro.debuggable 1
-            $RP --delete ro.secure; $RP ro.secure 0
-            $RP --delete ro.adb.secure; $RP ro.adb.secure 0
-            $RP --delete ro.build.type; $RP ro.build.type userdebug
-            stop adbd
-            $RP service.adb.root 1
-            start adbd
-        `);
-        if (errno === 0) {
-            showToast('ADB Root 已开启，重新连接 ADB 即生效');
-            updateAdbRootUI(true);
-        } else {
-            showToast('开启失败: ' + (stderr || 'resetprop 不可用'));
-            updateAdbRootUI(false);
-        }
-    } else {
-        const { errno, stderr } = await exec(`
-            ${FIND_RESETPROP}
-            rm -f "${MODULE_DIR}/adb_root_enabled"
-            $RP --delete ro.debuggable; $RP ro.debuggable 0
-            $RP --delete ro.secure; $RP ro.secure 1
-            $RP --delete ro.adb.secure; $RP ro.adb.secure 1
-            $RP --delete ro.build.type; $RP ro.build.type user
-            stop adbd
-            $RP service.adb.root 0
-            start adbd
-        `);
-        if (errno === 0) {
-            showToast('ADB Root 已关闭');
-            updateAdbRootUI(false);
-        } else {
-            showToast('关闭失败: ' + (stderr || 'resetprop 不可用'));
-            updateAdbRootUI(true);
-        }
-    }
-}
-
-// ============================================================
 //  主逻辑
 // ============================================================
 async function loadAll() {
@@ -858,11 +624,10 @@ async function loadAll() {
     ];
     const mergedKeys = [...new Set([...allKeys, ...infoKeys])];
 
-    const [vals, rootSolution, moduleActive, adbRootEnabled] = await Promise.all([
+    const [vals, rootSolution, moduleActive] = await Promise.all([
         getProps(mergedKeys),
         detectRoot(),
         checkModuleStatus(),
-        checkAdbRoot(),
     ]);
 
     // Hero 状态
@@ -899,9 +664,6 @@ async function loadAll() {
         h3El.style.color = 'var(--s-color-on-surface-variant, #666)';
     }
 
-    // ADB Root 状态
-    updateAdbRootUI(adbRootEnabled);
-
     // 属性分组
     renderPropGroups(vals);
 
@@ -927,15 +689,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('loadingOverlay').classList.remove('hide');
         await loadAll();
         showToast('已刷新');
-    });
-
-    // ADB Root 开关
-    document.getElementById('adbRootCheckbox').addEventListener('change', async (e) => {
-        const cb = e.target;
-        const enable = cb.checked;
-        cb.disabled = true;
-        await toggleAdbRoot(enable);
-        cb.disabled = false;
     });
 });
 </script>
