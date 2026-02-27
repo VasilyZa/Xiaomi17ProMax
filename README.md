@@ -1,12 +1,11 @@
 # DeviceSpoofX
 
-将当前 Android 设备伪装为 **Xiaomi 17 Pro Max**，通过 OverlayFS 覆盖系统 `build.prop` 并结合 `resetprop` 注入属性，全面修改系统上报的设备型号、代号、品牌、营销名称等信息。适配 MIUI 12 至 HyperOS 3，支持 Magisk / KernelSU / APatch 三大 Root 方案，提供 WebUI 管理界面。
+将当前 Android 设备伪装为 **Xiaomi 17 Pro Max**，通过 `resetprop` 在每次启动时直接注入系统属性，全面修改系统上报的设备型号、代号、品牌、营销名称等信息。适配 MIUI 12 至 HyperOS 3，支持 Magisk / KernelSU / APatch 三大 Root 方案，提供 WebUI 管理界面。
 
 
 ## 功能概述
 
-- 覆盖 system、vendor、product、odm、system_ext 五个分区的 `build.prop`
-- 对 `build.prop` 中不存在的属性使用 `resetprop` 补充注入
+- 使用 `resetprop` 直接注入 system、vendor、product、odm、system_ext 全部分区的设备属性
 - 自动检测 HyperOS 3 并同步修改系统版本号
 - 修改 Settings 数据库中的设备名称、蓝牙名称、WiFi Direct 名称
 - 内置 WebUI 管理界面，可在 Root 管理器中直接查看伪装状态和属性详情
@@ -56,8 +55,8 @@ DeviceSpoofX/
 │       ├── update-binary
 │       └── updater-script
 ├── module.prop                # 模块元信息
-├── customize.sh               # 安装脚本（OverlayFS 覆盖生成）
-├── post-fs-data.sh            # 早期启动属性注入（resetprop 补漏）
+├── customize.sh               # 安装脚本（环境检测、HyperOS 3 标记）
+├── post-fs-data.sh            # 早期启动属性注入（resetprop 主力）
 ├── service.sh                 # 启动完成后修改 Settings 数据库
 ├── uninstall.sh               # 卸载清理
 └── webroot/
@@ -66,9 +65,9 @@ DeviceSpoofX/
 
 ### 工作原理
 
-1. **安装阶段** (`customize.sh`)：复制各分区 `build.prop` 到模块目录，逐一替换目标属性值，由 Root 管理器通过 OverlayFS 在启动时覆盖原文件。
+1. **安装阶段** (`customize.sh`)：检测当前设备信息和 Root 方案，判断是否为 HyperOS 3 并写入标记文件，清理旧版模块残留。
 
-2. **早期启动** (`post-fs-data.sh`)：使用 `resetprop` 注入 `build.prop` 中可能不存在的属性（如 `ro.product.marketname`），以及 HyperOS 3 版本号属性。
+2. **早期启动** (`post-fs-data.sh`)：使用 `resetprop -n` 直接注入所有目标属性，覆盖 system、vendor、product、odm、system_ext 全部分区的型号、代号、品牌、营销名称等。若检测到 HyperOS 3 标记，同时注入系统版本号属性。
 
 3. **启动完成** (`service.sh`)：等待系统启动完毕后，通过 `settings put` 修改 Settings 数据库中的设备名称、蓝牙名称、WiFi Direct 设备名称，并通过 `resetprop` 设置持久化属性。
 

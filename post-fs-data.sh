@@ -1,12 +1,17 @@
 #!/system/bin/sh
 # ============================================
-# DeviceSpoofX (OverlayFS)
-# post-fs-data.sh - OverlayFS 补漏
-# 仅处理 build.prop 覆盖无法生效的属性
+# DeviceSpoofX
+# post-fs-data.sh - 启动早期属性注入
+# 使用 resetprop 直接设置所有伪装属性
 # ============================================
 
 MODDIR=${0%/*}
 
+TARGET_MODEL="2509FPN0BC"
+TARGET_DEVICE="popsicle"
+TARGET_NAME="popsicle"
+TARGET_BRAND="Xiaomi"
+TARGET_MANUFACTURER="Xiaomi"
 TARGET_MARKETNAME="Xiaomi 17 Pro Max"
 TARGET_DISPLAY_ID="OS3.0.45.0.WPBCNXM"
 
@@ -37,21 +42,66 @@ RESETPROP_BIN=$(find_resetprop)
 [ -z "$RESETPROP_BIN" ] && exit 0
 
 # ============================================
-# 补漏: build.prop 中可能不存在的属性
-# OverlayFS 只能修改文件中已有的行
-# 不在 build.prop 中的属性需要 resetprop 注入
+# 设备型号
 # ============================================
 
-# 营销名称 (部分机型 build.prop 中无此属性)
+$RESETPROP_BIN -n ro.product.model "$TARGET_MODEL"
+$RESETPROP_BIN -n ro.product.system.model "$TARGET_MODEL"
+$RESETPROP_BIN -n ro.product.vendor.model "$TARGET_MODEL"
+$RESETPROP_BIN -n ro.product.odm.model "$TARGET_MODEL"
+$RESETPROP_BIN -n ro.product.product.model "$TARGET_MODEL"
+$RESETPROP_BIN -n ro.product.system_ext.model "$TARGET_MODEL"
+
+# ============================================
+# 设备代号
+# ============================================
+
+$RESETPROP_BIN -n ro.product.device "$TARGET_DEVICE"
+$RESETPROP_BIN -n ro.product.system.device "$TARGET_DEVICE"
+$RESETPROP_BIN -n ro.product.vendor.device "$TARGET_DEVICE"
+$RESETPROP_BIN -n ro.product.odm.device "$TARGET_DEVICE"
+$RESETPROP_BIN -n ro.build.product "$TARGET_DEVICE"
+
+# ============================================
+# 产品名称
+# ============================================
+
+$RESETPROP_BIN -n ro.product.name "$TARGET_NAME"
+$RESETPROP_BIN -n ro.product.system.name "$TARGET_NAME"
+$RESETPROP_BIN -n ro.product.vendor.name "$TARGET_NAME"
+$RESETPROP_BIN -n ro.product.odm.name "$TARGET_NAME"
+
+# ============================================
+# 品牌
+# ============================================
+
+$RESETPROP_BIN -n ro.product.brand "$TARGET_BRAND"
+$RESETPROP_BIN -n ro.product.system.brand "$TARGET_BRAND"
+$RESETPROP_BIN -n ro.product.vendor.brand "$TARGET_BRAND"
+
+# ============================================
+# 制造商
+# ============================================
+
+$RESETPROP_BIN -n ro.product.manufacturer "$TARGET_MANUFACTURER"
+
+# ============================================
+# 营销名称
+# ============================================
+
 $RESETPROP_BIN -n ro.product.marketname "$TARGET_MARKETNAME"
 $RESETPROP_BIN -n ro.product.odm.marketname "$TARGET_MARKETNAME"
 $RESETPROP_BIN -n ro.product.vendor.marketname "$TARGET_MARKETNAME"
 $RESETPROP_BIN -n ro.product.system.marketname "$TARGET_MARKETNAME"
 
-# HyperOS 3 补漏 (仅在安装时检测到 HyperOS 3 时执行)
+# ============================================
+# HyperOS 3 版本号（仅在安装时检测到时执行）
+# ============================================
+
 if [ -f "$MODDIR/is_hyperos3" ]; then
+    $RESETPROP_BIN -n ro.build.display.id "$TARGET_DISPLAY_ID"
+    $RESETPROP_BIN -n ro.build.version.incremental "$TARGET_DISPLAY_ID"
     $RESETPROP_BIN -n ro.mi.os.version.incremental "$TARGET_DISPLAY_ID"
     $RESETPROP_BIN -n ro.mi.os.version.name "OS3.0"
     $RESETPROP_BIN -n ro.mi.os.version.code "17"
-    $RESETPROP_BIN -n ro.build.display.id "$TARGET_DISPLAY_ID"
 fi

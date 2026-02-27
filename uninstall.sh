@@ -9,9 +9,8 @@ MODDIR=${0%/*}
 # 清除持久化属性
 resetprop --delete persist.sys.device_name 2>/dev/null
 
-# 强制删除所有模块文件
+# 删除模块文件
 rm -rf "$MODDIR/webroot" 2>/dev/null
-rm -rf "$MODDIR/system" 2>/dev/null
 rm -f "$MODDIR/is_hyperos3" 2>/dev/null
 rm -f "$MODDIR/post-fs-data.sh" 2>/dev/null
 rm -f "$MODDIR/service.sh" 2>/dev/null
