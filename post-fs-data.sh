@@ -135,12 +135,14 @@ set_prop_safe ro.build.description "${TARGET_NAME}-user 16 BP1A.250305.001 relea
 
 # ============================================
 # HyperOS 3 版本号自动修改
-# 检测 ro.miui.ui.version.name 为 V170 或
-# ro.build.display.id 以 OS3 开头即判定为 HyperOS 3
+# 多条件检测: ro.miui.ui.version.name / ro.build.display.id /
+#             ro.mi.os.version.incremental / ro.build.version.incremental
 # ============================================
 
 MIUI_VER=$(getprop ro.miui.ui.version.name)
 DISPLAY_ID=$(getprop ro.build.display.id)
+MI_OS_INC=$(getprop ro.mi.os.version.incremental)
+BUILD_INC=$(getprop ro.build.version.incremental)
 TARGET_DISPLAY_ID="OS3.0.45.0.WPBCNXM"
 
 is_hyperos3="false"
@@ -148,7 +150,13 @@ case "$MIUI_VER" in
     V170*) is_hyperos3="true" ;;
 esac
 case "$DISPLAY_ID" in
-    OS3*) is_hyperos3="true" ;;
+    OS3*|3.*) is_hyperos3="true" ;;
+esac
+case "$MI_OS_INC" in
+    OS3*|3.*) is_hyperos3="true" ;;
+esac
+case "$BUILD_INC" in
+    OS3*|3.*) is_hyperos3="true" ;;
 esac
 
 if [ "$is_hyperos3" = "true" ]; then
@@ -161,10 +169,10 @@ if [ "$is_hyperos3" = "true" ]; then
 
     # HyperOS 专有版本属性（设置页面实际读取）
     $RESETPROP_BIN -n ro.mi.os.version.incremental "$TARGET_DISPLAY_ID"
-    set_prop_safe ro.mi.os.version.name "OS3.0"
-    set_prop_safe ro.mi.os.version.code "17"
+    $RESETPROP_BIN -n ro.mi.os.version.name "OS3.0"
+    $RESETPROP_BIN -n ro.mi.os.version.code "17"
 
-    # 增量版本号
+    # 增量版本号（所有分区变体强制设置）
     $RESETPROP_BIN -n ro.build.version.incremental "$TARGET_DISPLAY_ID"
     set_prop_safe ro.system.build.version.incremental "$TARGET_DISPLAY_ID"
     set_prop_safe ro.vendor.build.version.incremental "$TARGET_DISPLAY_ID"
