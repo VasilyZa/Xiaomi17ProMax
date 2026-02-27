@@ -287,13 +287,13 @@ jobs:
           fi
 
           # customize.sh 安装界面版本号
-          sed -i "s/║  版本: v[0-9.]*/║  版本: ${DISPLAY_VER}/" customize.sh
+          sed -i "s/DeviceSpoofX v[0-9.]*/DeviceSpoofX ${DISPLAY_VER}/" customize.sh
 
           # WebUI Hero badge
           sed -i "s/Device Spoofer v[0-9.]*/Device Spoofer ${DISPLAY_VER}/" webroot/index.html
 
           # WebUI footer
-          sed -i "s/Device Spoofer v[0-9.]*/Device Spoofer ${DISPLAY_VER}/" webroot/index.html
+          sed -i "s|DeviceSpoofX</span> v[0-9.]*|DeviceSpoofX</span> ${DISPLAY_VER}|" webroot/index.html
 
           echo "All files patched to ${DISPLAY_VER}"
 
@@ -421,6 +421,6 @@ jobs:
             > ⚠️ 如需恢复原始设备信息，在管理器中卸载本模块后重启即可。
 
             ---
-            *Built with GitHub Actions · Powered by Sober UI*
+            *Built with GitHub Actions · Powered by TDesign Mobile Vue*
           files: ${{ steps.info.outputs.filename }}.zip
           make_latest: true
