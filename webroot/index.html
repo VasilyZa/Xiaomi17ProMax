@@ -700,13 +700,12 @@ function updateAdbRootUI(enabled) {
     const sw = document.getElementById('adbRootSwitch');
     const status = document.getElementById('adbRootStatus');
     const warn = document.getElementById('adbRootWarn');
+    sw.checked = enabled;
     if (enabled) {
-        sw.setAttribute('checked', '');
         status.textContent = '已开启';
         status.className = 'toggle-status on';
         warn.classList.add('show');
     } else {
-        sw.removeAttribute('checked');
         status.textContent = '已关闭';
         status.className = 'toggle-status off';
         warn.classList.remove('show');
@@ -836,12 +835,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ADB Root 开关
-    document.getElementById('adbRootSwitch').addEventListener('change', async (e) => {
-        const sw = e.target;
-        const enable = sw.hasAttribute('checked');
-        sw.style.pointerEvents = 'none';
+    document.getElementById('adbRootSwitch').addEventListener('change', async () => {
+        const sw = document.getElementById('adbRootSwitch');
+        const enable = sw.checked;
+        sw.disabled = true;
         await toggleAdbRoot(enable);
-        sw.style.pointerEvents = '';
+        sw.disabled = false;
     });
 });
 </script>
