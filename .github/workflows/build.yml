@@ -1,0 +1,64 @@
+name: Build Module
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get module info
+        id: info
+        run: |
+          # 从 module.prop 读取模块 ID 和版本号
+          MODULE_ID=$(grep '^id=' module.prop | cut -d'=' -f2)
+          MODULE_VER=$(grep '^version=' module.prop | cut -d'=' -f2)
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          FILENAME="${MODULE_ID}-${MODULE_VER}-${SHORT_SHA}"
+
+          echo "module_id=${MODULE_ID}" >> "$GITHUB_OUTPUT"
+          echo "module_ver=${MODULE_VER}" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+          echo "filename=${FILENAME}" >> "$GITHUB_OUTPUT"
+
+          echo "Module: ${MODULE_ID}"
+          echo "Version: ${MODULE_VER}"
+          echo "Output: ${FILENAME}.zip"
+
+      - name: Build flashable ZIP
+        run: |
+          # 收集模块文件（排除非模块文件）
+          MODULE_FILES=(
+            META-INF/com/google/android/update-binary
+            META-INF/com/google/android/updater-script
+            module.prop
+            system.prop
+            post-fs-data.sh
+            service.sh
+            customize.sh
+            uninstall.sh
+            webroot/index.html
+          )
+
+          OUTNAME="${{ steps.info.outputs.filename }}.zip"
+
+          # 使用 zip -9 最大 deflate 压缩
+          zip -9 "$OUTNAME" "${MODULE_FILES[@]}"
+
+          echo "--- Build output ---"
+          ls -lh "$OUTNAME"
+          unzip -t "$OUTNAME"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.info.outputs.filename }}
+          path: ${{ steps.info.outputs.filename }}.zip
+          compression-level: 0
