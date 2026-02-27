@@ -812,8 +812,9 @@ async function toggleAdbRoot(enable) {
             $RP --delete ro.secure; $RP ro.secure 0
             $RP --delete ro.adb.secure; $RP ro.adb.secure 0
             $RP --delete ro.build.type; $RP ro.build.type userdebug
-            $RP service.adb.root 1
             setprop ctl.restart adbd
+            sleep 1
+            $RP service.adb.root 1
         `);
         if (errno === 0) {
             showToast('ADB Root 已开启，重新连接 ADB 即生效');
@@ -830,8 +831,9 @@ async function toggleAdbRoot(enable) {
             $RP --delete ro.secure; $RP ro.secure 1
             $RP --delete ro.adb.secure; $RP ro.adb.secure 1
             $RP --delete ro.build.type; $RP ro.build.type user
-            $RP service.adb.root 0
             setprop ctl.restart adbd
+            sleep 1
+            $RP service.adb.root 0
         `);
         if (errno === 0) {
             showToast('ADB Root 已关闭');
