@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Xiaomi 17 Pro Max Spoofer</title>
+    <script src="https://unpkg.com/sober@latest/dist/sober.min.js"></script>
+    <style>
+        :root {
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'HarmonyOS Sans', 'Mi Sans', system-ui, -apple-system, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* ---- 主滚动区域 ---- */
+        .scroll-area {
+            padding: 0 16px 32px;
+            padding-bottom: calc(32px + var(--safe-bottom));
+        }
+
+        /* ---- Hero 区域 ---- */
+        .hero {
+            position: relative;
+            padding: 28px 20px 24px;
+            margin: 12px 0 20px;
+            border-radius: 28px;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--s-color-primary, #5b6abf) 0%, var(--s-color-tertiary, #7b4f9e) 100%);
+            color: var(--s-color-on-primary, #fff);
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -40%; right: -20%;
+            width: 260px; height: 260px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%; left: -10%;
+            width: 200px; height: 200px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .hero-content { position: relative; z-index: 1; }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.18);
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            margin-bottom: 16px;
+            backdrop-filter: blur(4px);
+        }
+        .hero-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            line-height: 1.3;
+        }
+        .hero-subtitle {
+            margin-top: 6px;
+            font-size: 0.88rem;
+            opacity: 0.85;
+            line-height: 1.5;
+        }
+        .hero-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 18px;
+        }
+        .hero-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 14px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.15);
+            font-size: 0.78rem;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+        .hero-chip .dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .dot-green { background: #66ffb2; }
+        .dot-yellow { background: #ffe066; }
+        .dot-red { background: #ff6b6b; }
+
+        /* ---- 区块标题 ---- */
+        .section-title {
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--s-color-primary, #5b6abf);
+            padding: 0 4px;
+            margin: 24px 0 12px;
+        }
+
+        /* ---- 信息卡片 ---- */
+        .info-card {
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+        .info-card-inner { padding: 20px; }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 11px 0;
+        }
+        .info-row:not(:last-child) {
+            border-bottom: 1px solid var(--s-color-outline-variant, rgba(0,0,0,0.08));
+        }
+        .info-label {
+            font-size: 0.84rem;
+            color: var(--s-color-on-surface-variant, #666);
+            flex-shrink: 0;
+            margin-right: 12px;
+        }
+        .info-value {
+            font-size: 0.84rem;
+            font-weight: 500;
+            color: var(--s-color-on-surface, #1a1a1a);
+            text-align: right;
+            word-break: break-all;
+            font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace;
+        }
+
+        /* ---- 属性表格 ---- */
+        .prop-group { margin-bottom: 14px; }
+        .prop-group-card {
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        .prop-group-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .prop-group-title {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--s-color-on-surface, #1a1a1a);
+        }
+        .prop-count {
+            font-size: 0.72rem;
+            font-weight: 500;
+            padding: 2px 10px;
+            border-radius: 12px;
+            background: var(--s-color-primary-container, #e8e0ff);
+            color: var(--s-color-on-primary-container, #4a3880);
+        }
+        .prop-group-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .prop-group-body.expanded {
+            max-height: 2000px;
+        }
+        .prop-group-body-inner { padding: 0 20px 16px; }
+        .prop-item {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            padding: 10px 0;
+        }
+        .prop-item:not(:last-child) {
+            border-bottom: 1px solid var(--s-color-outline-variant, rgba(0,0,0,0.06));
+        }
+        .prop-key {
+            font-size: 0.76rem;
+            color: var(--s-color-primary, #5b6abf);
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+            word-break: break-all;
+        }
+        .prop-val {
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--s-color-on-surface, #1a1a1a);
+            font-family: 'Cascadia Code', 'Fira Code', monospace;
+            word-break: break-all;
+        }
+        .prop-arrow {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--s-color-on-surface-variant, #666);
+        }
+        .prop-arrow.rotated { transform: rotate(180deg); }
+
+        /* ---- 操作按钮区 ---- */
+        .action-card {
+            border-radius: 20px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .action-card:active { transform: scale(0.97); }
+        .action-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 22px 12px;
+        }
+        .action-icon {
+            width: 44px; height: 44px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--s-color-primary-container, #e8e0ff);
+            color: var(--s-color-on-primary-container, #4a3880);
+        }
+        .action-text {
+            font-size: 0.84rem;
+            font-weight: 500;
+            color: var(--s-color-on-surface, #1a1a1a);
+        }
+
+        /* ---- 底部信息 ---- */
+        .footer {
+            text-align: center;
+            padding: 16px 0 8px;
+            font-size: 0.76rem;
+            color: var(--s-color-on-surface-variant, #999);
+            line-height: 1.6;
+        }
+
+        /* ---- 加载遮罩 ---- */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            background: var(--s-color-surface, #fff);
+            transition: opacity 0.4s ease;
+        }
+        .loading-overlay.hide {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .loading-text {
+            font-size: 0.88rem;
+            color: var(--s-color-on-surface-variant, #999);
+        }
+
+        /* ---- 动画 ---- */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(18px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .anim-item {
+            opacity: 0;
+            animation: fadeUp 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+    </style>
+</head>
+<body>
+<s-page theme="auto">
+
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <s-circular-progress></s-circular-progress>
+        <div class="loading-text">正在读取设备信息...</div>
+    </div>
+
+    <!-- 顶栏 -->
+    <s-appbar>
+        <s-icon-button slot="navigation" id="btnBack">
+            <s-icon type="arrow_back"></s-icon>
+        </s-icon-button>
+        <div slot="headline">Xiaomi 17 Pro Max</div>
+    </s-appbar>
+
+    <div class="scroll-area">
+
+        <!-- Hero -->
+        <div class="hero anim-item" style="animation-delay:.05s">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+                    Device Spoofer v1.1.0
+                </div>
+                <div class="hero-title">Xiaomi 17 Pro Max</div>
+                <div class="hero-subtitle">适配 MIUI 12 ~ HyperOS 3 · 支持 Magisk / KernelSU / APatch</div>
+                <div class="hero-chips">
+                    <div class="hero-chip"><span class="dot dot-green" id="dotStatus"></span><span id="txtModuleStatus">检测中...</span></div>
+                    <div class="hero-chip"><span id="txtRootSolution">Root: --</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 操作按钮 -->
+        <div class="anim-item" style="animation-delay:.12s">
+            <s-card class="action-card" type="filled" clickable="true" id="btnRefresh" style="border-radius:20px;overflow:hidden;">
+                <div class="action-inner" style="flex-direction:row;padding:18px 24px;gap:14px;">
+                    <div class="action-icon">
+                        <svg viewBox="0 -960 960 960" width="24" height="24" fill="currentColor"><path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg>
+                    </div>
+                    <span class="action-text">刷新状态</span>
+                </div>
+            </s-card>
+        </div>
+
+        <!-- 伪装信息 -->
+        <div class="section-title anim-item" style="animation-delay:.18s">伪装目标</div>
+        <s-card class="info-card anim-item" type="outlined" style="animation-delay:.22s">
+            <div class="info-card-inner">
+                <div class="info-row">
+                    <span class="info-label">营销名称</span>
+                    <span class="info-value">Xiaomi 17 Pro Max</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">型号号码</span>
+                    <span class="info-value">2509FPN0BC</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">设备代号</span>
+                    <span class="info-value">popsicle</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">品牌</span>
+                    <span class="info-value">Xiaomi</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">版本号</span>
+                    <span class="info-value">OS3.0.45.0.WPBCNXM<br><span style="font-size:0.72rem;opacity:0.6">仅 HyperOS 3 自动生效</span></span>
+                </div>
+            </div>
+        </s-card>
+
+        <!-- 当前系统属性 -->
+        <div class="section-title anim-item" style="animation-delay:.28s">当前系统属性</div>
+        <s-card class="info-card anim-item" type="outlined" style="animation-delay:.32s">
+            <div class="info-card-inner">
+                <div class="info-row">
+                    <span class="info-label">营销名称</span>
+                    <span class="info-value" id="curMarketname">--</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">型号</span>
+                    <span class="info-value" id="curModel">--</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">设备代号</span>
+                    <span class="info-value" id="curDevice">--</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">品牌</span>
+                    <span class="info-value" id="curBrand">--</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Android 版本</span>
+                    <span class="info-value" id="curAndroid">--</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">系统版本</span>
+                    <span class="info-value" id="curMIUI">--</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">HyperOS 3</span>
+                    <span class="info-value" id="curHyperOS3">--</span>
+                </div>
+            </div>
+        </s-card>
+
+        <!-- 修改属性列表 -->
+        <div class="section-title anim-item" style="animation-delay:.38s">已修改属性</div>
+        <div id="propGroups" class="anim-item" style="animation-delay:.42s"></div>
+
+        <!-- 底部 -->
+        <div class="footer anim-item" style="animation-delay:.48s">
+            Xiaomi 17 Pro Max Device Spoofer v1.1.0<br>
+            Powered by Sober UI · Made with ❤
+        </div>
+
+    </div>
+</s-page>
+
+<!-- Snackbar -->
+<s-snackbar id="snackbar"></s-snackbar>
+
+<script>
+// ============================================================
+//  KernelSU / APatch / Magisk JavaScript Bridge
+// ============================================================
+let _cbId = 0;
+function exec(cmd, opts = {}) {
+    return new Promise(resolve => {
+        const cb = `__cb_${Date.now()}_${_cbId++}`;
+        window[cb] = (errno, stdout, stderr) => {
+            resolve({ errno, stdout: stdout || '', stderr: stderr || '' });
+            delete window[cb];
+        };
+        try {
+            if (typeof ksu !== 'undefined') {
+                ksu.exec(cmd, JSON.stringify(opts), cb);
+            } else {
+                // 本地调试回退
+                resolve({ errno: 1, stdout: '', stderr: 'ksu not available (browser debug mode)' });
+            }
+        } catch (e) {
+            resolve({ errno: 1, stdout: '', stderr: e.message });
+        }
+    });
+}
+
+function showToast(msg) {
+    if (typeof ksu !== 'undefined') { ksu.toast(msg); return; }
+    const sb = document.getElementById('snackbar');
+    sb.textContent = msg;
+    sb.show();
+}
+
+// ============================================================
+//  读取系统属性
+// ============================================================
+async function getProp(key) {
+    const { errno, stdout } = await exec(`getprop ${key}`);
+    return errno === 0 ? stdout.trim() : '';
+}
+
+async function getProps(keys) {
+    // 批量读取，减少 exec 调用次数
+    const script = keys.map(k => `echo "@@${k}@@=$(getprop ${k})"`).join(';');
+    const { stdout } = await exec(`sh -c '${script}'`);
+    const result = {};
+    keys.forEach(k => {
+        const m = stdout.match(new RegExp(`@@${k.replace(/\./g, '\\.')}@@=(.*)`));
+        result[k] = m ? m[1].trim() : '';
+    });
+    return result;
+}
+
+// ============================================================
+//  属性分组定义
+// ============================================================
+const PROP_GROUPS = [
+    {
+        title: '设备型号',
+        icon: 'smartphone',
+        props: [
+            'ro.product.model',
+            'ro.product.system.model',
+            'ro.product.vendor.model',
+            'ro.product.odm.model',
+            'ro.product.product.model',
+            'ro.product.system_ext.model',
+        ]
+    },
+    {
+        title: '设备代号',
+        icon: 'developer_board',
+        props: [
+            'ro.product.device',
+            'ro.product.system.device',
+            'ro.product.vendor.device',
+            'ro.product.odm.device',
+            'ro.build.product',
+        ]
+    },
+    {
+        title: '产品名称',
+        icon: 'label',
+        props: [
+            'ro.product.name',
+            'ro.product.system.name',
+            'ro.product.vendor.name',
+            'ro.product.odm.name',
+        ]
+    },
+    {
+        title: '品牌与制造商',
+        icon: 'business',
+        props: [
+            'ro.product.brand',
+            'ro.product.system.brand',
+            'ro.product.vendor.brand',
+            'ro.product.manufacturer',
+        ]
+    },
+    {
+        title: '营销名称',
+        icon: 'storefront',
+        props: [
+            'ro.product.marketname',
+            'ro.product.odm.marketname',
+            'ro.product.vendor.marketname',
+            'persist.sys.device_name',
+        ]
+    },
+    {
+        title: '系统版本号',
+        icon: 'system_update',
+        props: [
+            'ro.build.display.id',
+            'ro.mi.os.version.incremental',
+            'ro.mi.os.version.name',
+            'ro.mi.os.version.code',
+            'ro.build.version.incremental',
+            'ro.system.build.display.id',
+            'ro.vendor.build.display.id',
+            'ro.odm.build.display.id',
+            'ro.miui.ui.version.name',
+        ]
+    },
+];
+
+// ============================================================
+//  渲染属性分组
+// ============================================================
+function renderPropGroups(allVals) {
+    const container = document.getElementById('propGroups');
+    container.innerHTML = '';
+
+    PROP_GROUPS.forEach((group, gi) => {
+        const validProps = group.props.filter(p => allVals[p] !== undefined);
+        const card = document.createElement('div');
+        card.className = 'prop-group';
+        card.innerHTML = `
+            <s-card class="prop-group-card" type="outlined">
+                <div class="prop-group-header" data-group="${gi}">
+                    <span class="prop-group-title">${group.title}</span>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span class="prop-count">${validProps.length} 项</span>
+                        <s-icon class="prop-arrow" type="expand_more" style="font-size:20px"></s-icon>
+                    </div>
+                </div>
+                <div class="prop-group-body" id="pgBody${gi}">
+                    <div class="prop-group-body-inner">
+                        ${validProps.map(p => `
+                            <div class="prop-item">
+                                <span class="prop-key">${p}</span>
+                                <span class="prop-val">${allVals[p] || '(empty)'}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </s-card>
+        `;
+        container.appendChild(card);
+
+        // 折叠切换
+        card.querySelector('.prop-group-header').addEventListener('click', () => {
+            const body = document.getElementById(`pgBody${gi}`);
+            const arrow = card.querySelector('.prop-arrow');
+            body.classList.toggle('expanded');
+            arrow.classList.toggle('rotated');
+        });
+    });
+}
+
+// ============================================================
+//  检测 Root 方案
+// ============================================================
+async function detectRoot() {
+    // KernelSU
+    let r = await exec('which ksud');
+    if (r.errno === 0 && r.stdout.trim()) {
+        const ver = await exec('ksud --version');
+        return 'KernelSU ' + (ver.stdout.trim().split('\n')[0] || '');
+    }
+    // APatch
+    r = await exec('which apd');
+    if (r.errno === 0 && r.stdout.trim()) {
+        return 'APatch';
+    }
+    // Magisk
+    r = await exec('magisk -c');
+    if (r.errno === 0 && r.stdout.trim()) {
+        return 'Magisk ' + r.stdout.trim();
+    }
+    return 'Unknown';
+}
+
+// ============================================================
+//  检测模块状态
+// ============================================================
+const MODULE_ID = 'Xiaomi17ProMax';
+const MODULE_DIR = `/data/adb/modules/${MODULE_ID}`;
+
+async function checkModuleStatus() {
+    const { errno } = await exec(`[ -d "${MODULE_DIR}" ] && [ ! -f "${MODULE_DIR}/disable" ]`);
+    return errno === 0;
+}
+
+// ============================================================
+//  主逻辑
+// ============================================================
+async function loadAll() {
+    // 并行读取
+    const allKeys = PROP_GROUPS.flatMap(g => g.props);
+    const infoKeys = [
+        'ro.product.marketname', 'ro.product.model', 'ro.product.device',
+        'ro.product.brand', 'ro.build.version.release', 'ro.miui.ui.version.name',
+        'ro.build.display.id',
+    ];
+    const mergedKeys = [...new Set([...allKeys, ...infoKeys])];
+
+    const [vals, rootSolution, moduleActive] = await Promise.all([
+        getProps(mergedKeys),
+        detectRoot(),
+        checkModuleStatus(),
+    ]);
+
+    // Hero 状态
+    const dot = document.getElementById('dotStatus');
+    const txtStatus = document.getElementById('txtModuleStatus');
+    if (moduleActive) {
+        dot.className = 'dot dot-green';
+        txtStatus.textContent = '模块已激活';
+    } else {
+        dot.className = 'dot dot-red';
+        txtStatus.textContent = '模块未激活';
+    }
+    document.getElementById('txtRootSolution').textContent = rootSolution || 'Root: Unknown';
+
+    // 当前系统属性
+    document.getElementById('curMarketname').textContent = vals['ro.product.marketname'] || '--';
+    document.getElementById('curModel').textContent = vals['ro.product.model'] || '--';
+    document.getElementById('curDevice').textContent = vals['ro.product.device'] || '--';
+    document.getElementById('curBrand').textContent = vals['ro.product.brand'] || '--';
+    document.getElementById('curAndroid').textContent = vals['ro.build.version.release'] || '--';
+
+    const miuiVer = vals['ro.miui.ui.version.name'] || '';
+    const displayId = vals['ro.build.display.id'] || '';
+    document.getElementById('curMIUI').textContent = displayId || miuiVer || '--';
+
+    // HyperOS 3 检测
+    const isHyperOS3 = miuiVer.startsWith('V170') || displayId.startsWith('OS3');
+    const h3El = document.getElementById('curHyperOS3');
+    if (isHyperOS3) {
+        h3El.textContent = '已检测 · 版本号已修改';
+        h3El.style.color = 'var(--s-color-primary, #5b6abf)';
+    } else {
+        h3El.textContent = '未检测到 · 版本号不修改';
+        h3El.style.color = 'var(--s-color-on-surface-variant, #666)';
+    }
+
+    // 属性分组
+    renderPropGroups(vals);
+
+    // 隐藏 Loading
+    document.getElementById('loadingOverlay').classList.add('hide');
+}
+
+// ============================================================
+//  事件绑定
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    loadAll();
+
+    // 返回按钮
+    document.getElementById('btnBack').addEventListener('click', () => {
+        if (typeof ksu !== 'undefined') {
+            history.back();
+        }
+    });
+
+    // 刷新
+    document.getElementById('btnRefresh').addEventListener('click', async () => {
+        document.getElementById('loadingOverlay').classList.remove('hide');
+        await loadAll();
+        showToast('已刷新');
+    });
+});
+</script>
+</body>
+</html>

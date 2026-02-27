@@ -1,0 +1,66 @@
+#!/sbin/sh
+
+#################
+# Initialization
+#################
+
+umask 022
+
+ui_print() { echo "$1"; }
+
+#########################
+# 多 Root 方案兼容加载器
+# 支持 Magisk / KernelSU / APatch
+#########################
+
+OUTFD=$2
+ZIPFILE=$3
+
+# 按优先级依次检测: Magisk -> KernelSU -> APatch
+if [ -f /data/adb/magisk/util_functions.sh ]; then
+    # ========== Magisk ==========
+    . /data/adb/magisk/util_functions.sh
+    if [ "$MAGISK_VER_CODE" -lt 20400 ]; then
+        ui_print "*******************************"
+        ui_print " 请安装 Magisk v20.4+ !        "
+        ui_print "*******************************"
+        exit 1
+    fi
+    install_module
+elif [ -f /data/adb/ksud ] || [ -n "$KSU" ]; then
+    # ========== KernelSU ==========
+    # KernelSU 兼容 Magisk 模块格式，尝试加载其 util_functions
+    if [ -f /data/adb/ksu/bin/ksud ]; then
+        # KernelSU Next
+        . /data/adb/ksu/module_installer.sh
+    elif [ -f /data/adb/modules/util_functions.sh ]; then
+        . /data/adb/modules/util_functions.sh
+        install_module
+    else
+        ui_print "*******************************************"
+        ui_print " KernelSU 检测到但无法加载安装框架         "
+        ui_print " 请通过 KernelSU 管理器直接安装本模块      "
+        ui_print "*******************************************"
+        exit 1
+    fi
+elif [ -f /data/adb/apd ] || [ -n "$APATCH" ]; then
+    # ========== APatch ==========
+    if [ -f /data/adb/ap/util_functions.sh ]; then
+        . /data/adb/ap/util_functions.sh
+        install_module
+    else
+        ui_print "*******************************************"
+        ui_print " APatch 检测到但无法加载安装框架           "
+        ui_print " 请通过 APatch 管理器直接安装本模块        "
+        ui_print "*******************************************"
+        exit 1
+    fi
+else
+    ui_print "*******************************************"
+    ui_print " 未检测到任何 Root 方案!                   "
+    ui_print " 支持: Magisk / KernelSU / APatch         "
+    ui_print "*******************************************"
+    exit 1
+fi
+
+exit 0
