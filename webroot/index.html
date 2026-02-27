@@ -790,6 +790,7 @@ async function toggleAdbRoot(enable) {
             $RP ro.debuggable 1
             $RP ro.secure 0
             $RP ro.adb.secure 0
+            $RP ro.build.type userdebug
             $RP service.adb.root 1
             setprop ctl.restart adbd
         `);
@@ -807,6 +808,7 @@ async function toggleAdbRoot(enable) {
             $RP ro.debuggable 0
             $RP ro.secure 1
             $RP ro.adb.secure 1
+            $RP ro.build.type user
             $RP service.adb.root 0
             setprop ctl.restart adbd
         `);

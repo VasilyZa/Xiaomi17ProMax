@@ -13,6 +13,7 @@ resetprop --delete persist.sys.device_name 2>/dev/null
 resetprop ro.debuggable 0 2>/dev/null
 resetprop ro.secure 1 2>/dev/null
 resetprop ro.adb.secure 1 2>/dev/null
+resetprop ro.build.type user 2>/dev/null
 resetprop service.adb.root 0 2>/dev/null
 
 # 强制删除所有模块文件

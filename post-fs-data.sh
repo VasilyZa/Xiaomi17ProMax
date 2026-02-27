@@ -65,4 +65,5 @@ if [ -f "$MODDIR/adb_root_enabled" ]; then
     $RESETPROP_BIN ro.debuggable 1
     $RESETPROP_BIN ro.secure 0
     $RESETPROP_BIN ro.adb.secure 0
+    $RESETPROP_BIN ro.build.type userdebug
 fi
