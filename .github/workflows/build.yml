@@ -338,6 +338,7 @@ jobs:
             uninstall.sh
             current_profile
             profiles/xiaomi-17-pro-max.conf
+            profiles/redmi-k90-pro-max.conf
             webroot/index.html
           )
 

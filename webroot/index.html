@@ -404,6 +404,96 @@
             font-weight: 700 !important;
             letter-spacing: -0.01em !important;
         }
+
+        /* ---- 配置切换 ---- */
+        .profile-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 20px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 10px;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            border: 2px solid transparent;
+        }
+        .profile-item:active { transform: scale(0.985); }
+        .profile-item.active {
+            border-color: var(--accent-color);
+            background: var(--accent-light);
+        }
+        .profile-item-left {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .profile-item-name {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .profile-item-detail {
+            font-size: 0.74rem;
+            color: var(--text-secondary);
+            font-family: var(--mono-font);
+        }
+        .profile-check {
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+        .profile-check.checked {
+            border-color: var(--accent-color);
+            background: var(--accent-color);
+        }
+        .profile-check svg {
+            width: 14px; height: 14px;
+            color: #fff;
+        }
+        .reboot-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+            border-radius: 16px;
+            color: #fff;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+        }
+        .reboot-banner-text {
+            font-size: 0.84rem;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+        .reboot-btn {
+            flex-shrink: 0;
+            padding: 8px 20px;
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #fff;
+            font-size: 0.84rem;
+            font-weight: 700;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.15s ease, transform 0.15s ease;
+        }
+        .reboot-btn:active {
+            transform: scale(0.95);
+            background: rgba(255,255,255,0.3);
+        }
     </style>
 </head>
 <body>
@@ -436,6 +526,29 @@
                     <div class="hero-chip">
                         <span>{{ rootSolution }}</span>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 配置切换 -->
+        <div class="section-header anim" style="animation-delay:.10s">
+            <svg class="section-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
+            <span class="section-title">伪装机型</span>
+        </div>
+        <div class="anim" style="animation-delay:.12s">
+            <div class="reboot-banner" v-if="needReboot">
+                <span class="reboot-banner-text">配置已切换，重启后生效</span>
+                <button class="reboot-btn" @click="rebootDevice">立即重启</button>
+            </div>
+            <div class="profile-item" v-for="p in profileList" :key="p.key"
+                 :class="{ active: p.key === activeProfileKey }"
+                 @click="switchProfile(p.key)">
+                <div class="profile-item-left">
+                    <span class="profile-item-name">{{ p.name }}</span>
+                    <span class="profile-item-detail">{{ p.model }} / {{ p.device }}</span>
+                </div>
+                <div class="profile-check" :class="{ checked: p.key === activeProfileKey }">
+                    <svg v-if="p.key === activeProfileKey" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                 </div>
             </div>
         </div>
@@ -625,11 +738,29 @@ function parseProfile(text) {
 async function loadProfile() {
     const { stdout: profileKey } = await exec(`cat ${MODULE_DIR}/current_profile 2>/dev/null`);
     const key = profileKey.trim();
-    if (!key) return DEFAULT_PROFILE;
+    if (!key) return { key: 'xiaomi-17-pro-max', ...DEFAULT_PROFILE };
     const { errno, stdout } = await exec(`cat ${MODULE_DIR}/profiles/${key}.conf 2>/dev/null`);
-    if (errno !== 0 || !stdout.trim()) return DEFAULT_PROFILE;
+    if (errno !== 0 || !stdout.trim()) return { key, ...DEFAULT_PROFILE };
     const parsed = parseProfile(stdout);
-    return Object.keys(parsed).length > 0 ? { ...DEFAULT_PROFILE, ...parsed } : DEFAULT_PROFILE;
+    return Object.keys(parsed).length > 0 ? { key, ...DEFAULT_PROFILE, ...parsed } : { key, ...DEFAULT_PROFILE };
+}
+
+async function loadAllProfiles() {
+    const { stdout } = await exec(`ls ${MODULE_DIR}/profiles/*.conf 2>/dev/null`);
+    const files = stdout.trim().split('\n').filter(f => f.trim());
+    const list = [];
+    for (const f of files) {
+        const key = f.replace(/^.*\//, '').replace(/\.conf$/, '');
+        const { stdout: content } = await exec(`cat "${f}" 2>/dev/null`);
+        const parsed = parseProfile(content);
+        list.push({
+            key,
+            name: parsed.marketname || key,
+            model: parsed.model || '--',
+            device: parsed.device || '--',
+        });
+    }
+    return list;
 }
 
 // ============================================================
@@ -736,6 +867,9 @@ const app = createApp({
         const rootSolution = ref('Root: --');
         const propValues = reactive({});
         const expandedGroups = reactive({});
+        const profileList = ref([]);
+        const activeProfileKey = ref('');
+        const needReboot = ref(false);
 
         // 分组图标
         const groupIcons = GROUP_ICONS;
@@ -794,17 +928,38 @@ const app = createApp({
             ];
             const mergedKeys = [...new Set([...allKeys, ...infoKeys])];
 
-            const [vals, root, active, profileData] = await Promise.all([
+            const [vals, root, active, profileData, profiles] = await Promise.all([
                 getProps(mergedKeys),
                 detectRoot(),
                 checkModuleStatus(),
                 loadProfile(),
+                loadAllProfiles(),
             ]);
 
             Object.assign(profile, profileData);
+            activeProfileKey.value = profileData.key || 'xiaomi-17-pro-max';
+            profileList.value = profiles;
             Object.assign(propValues, vals);
             rootSolution.value = root;
             moduleActive.value = active;
+        }
+
+        // 切换配置
+        async function switchProfile(key) {
+            if (key === activeProfileKey.value) return;
+            await exec(`echo "${key}" > ${MODULE_DIR}/current_profile`);
+            activeProfileKey.value = key;
+            // 重新加载当前 profile 数据来更新 UI
+            const profileData = await loadProfile();
+            Object.assign(profile, profileData);
+            needReboot.value = true;
+            showToast('配置已切换，重启后生效');
+        }
+
+        // 重启设备
+        async function rebootDevice() {
+            showToast('正在重启...');
+            await exec('svc power reboot');
         }
 
         // 刷新
@@ -824,7 +979,9 @@ const app = createApp({
         return {
             profile, loading, refreshing, moduleActive, rootSolution,
             propValues, expandedGroups, groupIcons, targetInfo, currentInfo,
+            profileList, activeProfileKey, needReboot,
             PROP_GROUPS, countProps, toggleGroup, goBack, onRefresh,
+            switchProfile, rebootDevice,
         };
     }
 });
