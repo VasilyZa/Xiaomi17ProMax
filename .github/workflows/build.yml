@@ -337,10 +337,12 @@ jobs:
             customize.sh
             uninstall.sh
             current_profile
-            profiles/xiaomi-17-pro-max.conf
-            profiles/redmi-k90-pro-max.conf
             webroot/index.html
           )
+
+          for conf in profiles/*.conf; do
+            MODULE_FILES+=("$conf")
+          done
 
           OUTNAME="${{ steps.info.outputs.filename }}.zip"
           zip -9 "$OUTNAME" "${MODULE_FILES[@]}"
