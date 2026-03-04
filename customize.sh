@@ -6,18 +6,8 @@
 # ============================================
 
 # ============================================
-# 加载设备配置文件
+# 扫描并选择配置文件
 # ============================================
-
-PROFILE_KEY=$(cat "$MODPATH/current_profile" 2>/dev/null | tr -d '\r\n')
-PROFILE_CONF="$MODPATH/profiles/${PROFILE_KEY}.conf"
-
-if [ ! -f "$PROFILE_CONF" ]; then
-    ui_print "! 错误: 找不到配置文件 ${PROFILE_KEY}.conf"
-    abort "! 安装中止"
-fi
-
-. "$PROFILE_CONF"
 
 ui_print ""
 ui_print "╔══════════════════════════════════════╗"
@@ -26,7 +16,93 @@ ui_print "║  适配 MIUI 12 ~ HyperOS 3           ║"
 ui_print "║  支持 Magisk / KernelSU / APatch     ║"
 ui_print "╚══════════════════════════════════════╝"
 ui_print ""
-ui_print "- 当前配置: $PROFILE_NAME"
+
+PROFILE_DIR="$MODPATH/profiles"
+PROFILE_COUNT=0
+PROFILE_KEYS=""
+PROFILE_NAMES=""
+
+ui_print "- 正在扫描配置文件..."
+
+for conf in "$PROFILE_DIR"/*.conf; do
+    if [ -f "$conf" ]; then
+        key=$(basename "$conf" .conf)
+        PROFILE_NAME=$(grep "^PROFILE_NAME=" "$conf" | cut -d'=' -f2- | tr -d '"')
+        TARGET_MODEL=$(grep "^TARGET_MODEL=" "$conf" | cut -d'=' -f2- | tr -d '"')
+        PROFILE_COUNT=$((PROFILE_COUNT + 1))
+        PROFILE_KEYS="$PROFILE_KEYS|$key"
+        PROFILE_NAMES="$PROFILE_NAMES|$PROFILE_NAME|$TARGET_MODEL"
+    fi
+done
+
+PROFILE_KEYS=$(echo "$PROFILE_KEYS" | cut -c2-)
+PROFILE_NAMES=$(echo "$PROFILE_NAMES" | cut -c2-)
+
+if [ $PROFILE_COUNT -eq 0 ]; then
+    ui_print "! 错误: 未找到任何配置文件"
+    abort "! 安装中止"
+fi
+
+ui_print "- 找到 $PROFILE_COUNT 个配置文件"
+ui_print ""
+
+if [ $PROFILE_COUNT -eq 1 ]; then
+    PROFILE_KEY="$PROFILE_KEYS"
+    . "$MODPATH/profiles/${PROFILE_KEY}.conf"
+    ui_print "- 只有一个配置，自动选择: $PROFILE_NAME"
+else
+    ui_print "请选择要伪装的机型:"
+    ui_print ""
+    
+    INDEX=1
+    
+    while true; do
+        OLDIFS="$IFS"
+        IFS='|'
+        set -- $PROFILE_KEYS
+        CURRENT_KEY=$(eval echo \${$INDEX})
+        IFS='|'
+        set -- $PROFILE_NAMES
+        CURRENT_NAME=$(eval echo \${$((INDEX * 2 - 1))})
+        CURRENT_MODEL=$(eval echo \${$((INDEX * 2))})
+        IFS="$OLDIFS"
+        
+        CONF="$MODPATH/profiles/${CURRENT_KEY}.conf"
+        TARGET_DEVICE=$(grep "^TARGET_DEVICE=" "$CONF" | cut -d'=' -f2- | tr -d '"')
+        
+        ui_print "=================================="
+        ui_print "[$INDEX/$PROFILE_COUNT]"
+        ui_print "  $CURRENT_NAME"
+        ui_print "  型号: $CURRENT_MODEL"
+        ui_print "  代号: $TARGET_DEVICE"
+        ui_print "=================================="
+        
+        ui_print "音量上: 浏览下一项"
+        ui_print "音量下: 确认此项"
+        
+        chooseport 0
+        
+        case $chosen in
+            0)
+                INDEX=$((INDEX + 1))
+                if [ $INDEX -gt $PROFILE_COUNT ]; then
+                    INDEX=1
+                fi
+                ;;
+            1)
+                break
+                ;;
+        esac
+    done
+    
+    PROFILE_KEY=$CURRENT_KEY
+    . "$MODPATH/profiles/${PROFILE_KEY}.conf"
+    
+    ui_print ""
+    ui_print "- 已选择: $PROFILE_NAME"
+fi
+
+echo "$PROFILE_KEY" > "$MODPATH/current_profile"
 ui_print ""
 
 # ============================================
